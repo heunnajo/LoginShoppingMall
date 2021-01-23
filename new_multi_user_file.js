@@ -3,13 +3,11 @@ var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 var bodyParser = require('body-parser');
 var bkfd2Password = require("pbkdf2-password");
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
 var hasher = bkfd2Password();
 
-/* 업데이트된 pbkdf2 사용법
-var pbkdf2 = require('pbkdf2')
-var derivedKey = pbkdf2.pbkdf2Sync('helloworld', 'salt', 1, 32, 'sha512');*/
-//var md5 = require('md5');
-//var sha256 = require('sha256');//미설치
+
 var app = express();
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(session({
@@ -18,11 +16,10 @@ app.use(session({
     //세션을 실제로 사용하기 전까지는 발급하지 말아라.
     secret: 'GOFORHLS!HLS!HLS!',
     resave: false,
-    saveUninitialized: true,
-    store:new OrientoStore({
-        server:'host=localhost&port=2424&username=root&password=111111&db=o2'
-    })
+    saveUninitialized: true
   }));
+app.use(passport.initialize());
+app.use(passport.session());//세션에 관한 이코드는 반드시 app.use(session)뒤에 와야한다.세션을 사용하는 것이기 때문에 세션 설정 뒤에 와야한다.
 //routing
 app.get('/count',(req,res)=>{
     //sid와 서버에 저장된 데이터 'count'를 연결하는 방법
