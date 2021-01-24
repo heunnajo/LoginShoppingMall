@@ -75,14 +75,6 @@ app.post('/auth/login',(req,res)=>{
         }
     }
     res.send('Who are you?<a href="/auth/login">Login</a>');
-    // if(uname === user.username && pwd === user.password) {
-    //     req.session.displayName = user.displayName;//로그인에 성공하면 그 세션 id의 displayName으로 user.displayName 저장한다. 세션 id에 해당하는 정보를 서버에 저장한다.
-    //     req.session.save(function(){//save된 다음 리다이렉트한다.
-    //         res.redirect('/welcome');
-    //     });
-    // } else {
-    //     res.send('Your ID or Password is wrong. Please check again.<a href="/auth/login">login</a>');
-    // }
 });
 //salt : 원래 비밀번호와 salt(임의 문자열) 더해서 md5한다.
 var users=[
@@ -108,6 +100,26 @@ app.post('/auth/register',(req,res)=>{
         });
     });//이 콜백함수가 실행될 때 나머지 작업을 한다.
     
+});
+app.get('/auth/register',(req,res)=>{
+    var output = `
+        <h1>Register</h1>
+        <form action="/auth/register" method="post">
+            <p>
+                <input type="text" name="username" placeholder="username">
+            </p>
+            <p>
+                <input type="password" name="password" placeholder="password">
+            </p>
+            <p>
+                <input type="text" name="displayName" placeholder="displayName">
+            </p>
+            <p>
+                <input type="submit">
+            </p>
+        </form>
+    `;
+    res.send(output);
 });
 app.get('/auth/login',(req,res)=>{
     var output = `

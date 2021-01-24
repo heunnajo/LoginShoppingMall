@@ -10,17 +10,13 @@ var hasher = bkfd2Password();
 var app = express();
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(session({
-    //secret이란 사용자의 웹 브라우저에 sid(session id)를 심을 때 평문으로 심으면 위험하기 때문에
-    //resave-false : 서버에 접속할 때마다 새로운  sid를 발급받지 않겠다.
-    //세션을 실제로 사용하기 전까지는 발급하지 말아라.
     secret: 'GOFORHLS!HLS!HLS!',
     resave: false,
     saveUninitialized: true,
     store:new FileStore()
   }));
-//passport 미들웨어.
-app.use(passport.initialize());
-app.use(passport.session());//세션에 관한 이코드는 반드시 app.use(session)뒤에 와야한다.세션을 사용하는 것이기 때문에 세션 설정 뒤에 와야한다.
+app.use(passport.initialize());//passport 등록.
+app.use(passport.session());//로그인관련이기때문에 세션 이용.세션에 관한 이코드는 반드시 app.use(session)뒤에 와야한다.세션을 사용하는 것이기 때문에 세션 설정 뒤에 와야한다.
 //routing
 app.get('/count',(req,res)=>{
     //sid와 서버에 저장된 데이터 'count'를 연결하는 방법
@@ -31,14 +27,12 @@ app.get('/count',(req,res)=>{
         req.session.count = 1;
     }
     res.send('count :'+req.session.count);
-    res.send('hi session');
 });
 app.get('/auth/logout',(req,res)=>{//로그아웃할 때
-    req.logout();
+    req.logout();//세션의 데이터를  제거.
     res.session.save(function(){//저장이 끝났을 때 리다이렉트하는 콜백 함수를 나중에 호출한다.
         res.redirect('/welcome');
     });
-    
 });
 app.get('/welcome',(req,res)=>{
     if(req.user && req.user.displayName) {//객체가 생성되었는지, displayName이 존재하면(=로그인 성공)
@@ -59,10 +53,9 @@ app.get('/welcome',(req,res)=>{
 //세션을 이용.
 passport.serializeUser(function(user, done) {//done의 인자로 user를 전달.
     console.log('serializeUser',user);
-    done(null, user.username);//세션에 user의 username 정보가 저장된다!
-  });
-  
-  passport.deserializeUser(function(id, done) {//serializeUser의 user.username이 id로 들어온다.
+    done(null, user.username);//세션에 사용자를 구분하는 user의 username 정보가 저장된다!(세션에 등록)
+});
+passport.deserializeUser(function(id, done) {//serializeUser의 user.username이 id로 들어온다.
     console.log('deserializeUser',id);
     for(var i=0;i<users.length;i++) {
         var user = users[i];
@@ -70,10 +63,10 @@ passport.serializeUser(function(user, done) {//done의 인자로 user를 전달.
             return done(null,user);
         }
     }
-  });
+});
 //Local Strategy
 passport.use(new LocalStrategy(//'LocalStretegy'객체를 생성하여 우리가 이전 코드에서 콜백함수로 작성했던 부분을 여기서 수행하는 듯.
-    function(username, password, done) {
+    function(username, password, done) {//사용자가 입력한 ID(username)과 password가 매개변수로 전달된다.
         var uname = username;
         var pwd = password;
         for(var i=0;i<users.length;i++) {
@@ -150,6 +143,26 @@ app.post('/auth/register',(req,res)=>{
             });
         });
     });//이 콜백함수가 실행될 때 나머지 작업을 한다.
+});
+app.get('/auth/register',(req,res)=>{
+    var output = `
+        <h1>Register</h1>
+        <form action="/auth/register" method="post">
+            <p>
+                <input type="text" name="username" placeholder="username">
+            </p>
+            <p>
+                <input type="password" name="password" placeholder="password">
+            </p>
+            <p>
+                <input type="text" name="displayName" placeholder="displayName">
+            </p>
+            <p>
+                <input type="submit">
+            </p>
+        </form>
+    `;
+    res.send(output);
 });
 app.get('/auth/login',(req,res)=>{
     var output = `

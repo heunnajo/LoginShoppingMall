@@ -3,7 +3,7 @@ var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 var bodyParser = require('body-parser');
 var bkfd2Password = require("pbkdf2-password");
-const passport = require('passport');
+var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var FacebookStrategy = require('passport-facebook').Strategy;
 var hasher = bkfd2Password();
@@ -35,10 +35,9 @@ app.get('/count',(req,res)=>{
 });
 app.get('/auth/logout',(req,res)=>{//로그아웃할 때
     req.logout();
-    res.session.save(function(){//저장이 끝났을 때 리다이렉트하는 콜백 함수를 나중에 호출한다.
+    req.session.save(function(){//저장이 끝났을 때 리다이렉트하는 콜백 함수를 나중에 호출한다.
         res.redirect('/welcome');
     });
-    
 });
 app.get('/welcome',(req,res)=>{
     if(req.user && req.user.displayName) {//객체가 생성되었는지, displayName이 존재하면(=로그인 성공)
@@ -60,9 +59,9 @@ app.get('/welcome',(req,res)=>{
 passport.serializeUser(function(user, done) {//done의 인자로 user를 전달.
     console.log('serializeUser',user);
     done(null, user.authId);//(세션 식별자로 user의 authId!)세션에 user의 username 정보가 저장된다!
-  });
+});
   
-  passport.deserializeUser(function(id, done) {//serializeUser의 user.username이 id로 들어온다.
+passport.deserializeUser(function(id, done) {//serializeUser의 user.username이 id로 들어온다.
     console.log('deserializeUser',id);
     for(var i=0;i<users.length;i++) {
         var user = users[i];
@@ -70,7 +69,8 @@ passport.serializeUser(function(user, done) {//done의 인자로 user를 전달.
             return done(null,user);
         }
     }
-  });
+    done('There is no user.');
+});
 passport.use(new LocalStrategy(//'LocalStretegy'객체를 생성하여 우리가 이전 코드에서 콜백함수로 작성했던 부분을 여기서 수행하는 듯.
     function(username, password, done) {//MongoDB의 API를 쓰고 있는 듯.
         var uname = username;
@@ -92,9 +92,10 @@ passport.use(new LocalStrategy(//'LocalStretegy'객체를 생성하여 우리가
         done(null,false);
     }
   ));
-  passport.use(new FacebookStrategy({
-    clientID: 783930845805363,
-    clientSecret: bdcbfef6bdcbbd1042ff726301eebbd4,
+//facebook-strategy passport 등록.
+passport.use(new FacebookStrategy({
+    clientID: '783930845805363',
+    clientSecret: 'bdcbfef6bdcbbd1042ff726301eebbd4',
     callbackURL: "/auth/facebook/callback",
     profileFields:['id','email','gender','link','locale','name','timezone','updated_time','verified','displayName']
   },
@@ -116,19 +117,29 @@ passport.use(new LocalStrategy(//'LocalStretegy'객체를 생성하여 우리가
     done(null,newuser);
   }
 ));
+//local-passport routing!
 app.post('/auth/login', 
         passport.authenticate(
             'local',//'local'이라는 strategy가 실행되면 위의 passport.use의 콜백함수가 실행된다!
         { successRedirect: '/welcome', 
         failureRedirect: '/auth/login', 
         failureFlash: false}));
-//fb-passport를 사용하는 경우 라우트가 두번 진행된다.
+//fb-passport routing!:) 라우트가 두번 진행된다.
 app.get('/auth/facebook', passport.authenticate('facebook',{scope:'email'}));
+// app.get('/auth/facebook/callback',
+//         passport.authenticate(
+//             'facebook', 
+//         { successRedirect: '/welcome',
+//         failureRedirect: '/auth/login' }));
 app.get('/auth/facebook/callback',
         passport.authenticate(
             'facebook', 
-        { successRedirect: '/welcome',
-        failureRedirect: '/auth/login' }));
+        { failureRedirect: '/auth/login' }),
+        (req, res) => {//세션에 저장을 먼저한 다음 웰컴페이지로 리다이렉트한다!
+            req.session.save(() => {
+                res.redirect('/welcome');
+            })
+});
 var users=[
     {
         authId:'local:egoing',
@@ -155,6 +166,26 @@ app.post('/auth/register',(req,res)=>{
         });
     });//이 콜백함수가 실행될 때 나머지 작업을 한다.
 });
+app.get('/auth/register',(req,res)=>{
+    var output = `
+        <h1>Register</h1>
+        <form action="/auth/register" method="post">
+            <p>
+                <input type="text" name="username" placeholder="username">
+            </p>
+            <p>
+                <input type="password" name="password" placeholder="password">
+            </p>
+            <p>
+                <input type="text" name="displayName" placeholder="displayName">
+            </p>
+            <p>
+                <input type="submit">
+            </p>
+        </form>
+    `;
+    res.send(output);
+});
 app.get('/auth/login',(req,res)=>{
     var output = `
         <h1>Login</h1>
@@ -174,5 +205,5 @@ app.get('/auth/login',(req,res)=>{
     res.send(output);
 });
 app.listen(3003,function(){
-    console.log('Connected 3003 port!!!');
+    console.log('Connected 3003 port! Facebook Authentication Starts!');
 });
