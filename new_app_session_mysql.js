@@ -1,8 +1,23 @@
 var express = require('express');
 var session = require('express-session');
-//var MySQLStore = require('express-mysql-session')(session);
-var mysql = require('mysql');
-var connection = mysql.createConnection({
+var MySQLStore = require('express-mysql-session')(session);
+var bodyParser = require('body-parser');
+var app = express();
+app.use(bodyParser.urlencoded({extended:false}));
+app.use(session({
+    secret: 'peruiwdk;afjeru',
+    resave: false,
+    saveUninitialized: true,
+    store:new MySQLStore({
+        host:'localhost',
+        port:3306,
+        user:'root',
+        password:'gms961520$',
+        database:'o2'
+    })
+  }));
+//var mysql = require('mysql');
+/*var connection = mysql.createConnection({
     host     : 'localhost',
     user     : 'abigail',
     password : 'forever0!',
@@ -15,19 +30,7 @@ var connection = mysql.createConnection({
     console.log('The solution is: ', results[0].solution);
   });
    
-  connection.end();
-var bodyParser = require('body-parser');
-var app = express();
-app.use(bodyParser.urlencoded({extended:false}));
-app.use(session({
-    //secret이란 사용자의 웹 브라우저에 sid(session id)를 심을 때 평문으로 심으면 위험하기 때문에
-    //resave-false : 서버에 접속할 때마다 새로운  sid를 발급받지 않겠다.
-    //세션을 실제로 사용하기 전까지는 발급하지 말아라.
-    secret: 'GOFORHLS!HLS!HLS!',
-    resave: false,
-    saveUninitialized: true
-    //store:new MySQLStore({})
-  }));
+  connection.end();*/
 //routing
 app.get('/count',(req,res)=>{
     //sid와 서버에 저장된 데이터 'count'를 연결하는 방법
