@@ -14,7 +14,7 @@ app.use(session({
     //secret이란 사용자의 웹 브라우저에 sid(session id)를 심을 때 평문으로 심으면 위험하기 때문에
     //resave-false : 서버에 접속할 때마다 새로운  sid를 발급받지 않겠다.
     //세션을 실제로 사용하기 전까지는 발급하지 말아라.
-    secret: 'GOFORHLS!HLS!HLS!',
+    secret: '1093874qpwoieruah;j',
     resave: false,
     saveUninitialized: true,
     store:new MySQLStore({
@@ -24,7 +24,23 @@ app.use(session({
         password:'gms961520$',
         database:'o2'
     })
-  }));
+}));
+var mysql = require('mysql');//with an existing MySQL connection or pool
+var conn = mysql.createConnection ({
+    host:'localhost',
+    user:'root',
+    passport:'gms961520$',
+    database:'o2'/*,
+    multipleStatements: true,
+    typeCast: function (field, next) {
+    if (field.type == 'VAR_STRING') {
+        return field.string();
+    }
+    return next();
+    }*/
+});
+conn.connect();
+
 app.use(passport.initialize());
 app.use(passport.session());//세션에 관한 이코드는 반드시 app.use(session)뒤에 와야한다.세션을 사용하는 것이기 때문에 세션 설정 뒤에 와야한다.
 //routing
@@ -164,12 +180,20 @@ app.post('/auth/register',(req,res)=>{
             salt:salt,
             displayName:req.body.displayName
         };
-        users.push(user);
-        req.login(user, function(err) {
-            req.session.save(function(){
+        var sql = 'INSERT INTO users SET ?';
+        conn.query(sql,user,function(err,results){
+            if(err){
+                console.log(err);//for developer
+                res.status(500);//for user
+            } else {
                 res.redirect('/welcome');
-            });
+            }
         });
+        // req.login(user, function(err) {
+        //     req.session.save(function(){
+        //         res.redirect('/welcome');
+        //     });
+        // });
     });//이 콜백함수가 실행될 때 나머지 작업을 한다.
 });
 app.get('/auth/register',(req,res)=>{
@@ -210,6 +234,6 @@ app.get('/auth/login',(req,res)=>{
     `;
     res.send(output);
 });
-app.listen(3003,function(){
-    console.log('Connected 3003 port! Facebook Authentication Starts!');
+app.listen(3004,function(){
+    console.log('Connected 3004 port! Authentication with MySQL Starts!');
 });
